@@ -94,7 +94,7 @@ const VisualSelfDistancingScreen: React.FC = () => {
                   </ThemedText>
                 </View>)}
               <RiveAnimation
-                resourceName="z38_slider_27"
+                resourceName="z38_slider"
                 artboardName="Artboard 3"
                 stateMachineName="State Machine 1"
                 style={styles.riveAnimation}

@@ -1,3 +1,6 @@
+full screen with search floating
+
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
@@ -5,7 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  Platform,
 } from "react-native";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
@@ -14,15 +16,10 @@ import { useAnimatedScrollHandler } from "react-native-reanimated";
 import { TextInput, PanResponder, Animated as RNAnimated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 45) / 3;
-const GRID_ROWS = 5;
-const GRID_COLS = 3;
-const GAP = 5;
-const SECTION_WIDTH = SCREEN_WIDTH - 30;
-const SECTION_HEIGHT = (GRID_ITEM_WIDTH * GRID_ROWS) + (GAP * (GRID_ROWS - 1));
 
 type MoodOption = {
   text: string;
@@ -104,6 +101,21 @@ const moodOptions: Record<string, MoodOption[]> = {
 const Mood: React.FC = () => {
   const { mood } = useLocalSearchParams<{ mood: string }>();
   const pan = useRef(new RNAnimated.ValueXY()).current;
+  const GRID_ITEM_WIDTH = (SCREEN_WIDTH - 45) / 3; 
+  const GRID_ROWS = 5;
+  const GRID_COLS = 3;
+  const GAP = 5;
+  const SECTION_WIDTH = SCREEN_WIDTH - 30;
+  const SECTION_HEIGHT = (GRID_ITEM_WIDTH * GRID_ROWS) + (GAP * (GRID_ROWS - 1));
+  
+  // React.useEffect(() => {
+  //   if (scrollViewRef.current) {
+  //     const moodIndex = Object.keys(moodOptions).indexOf(mood);
+  //     if (moodIndex !== -1) {
+  //       scrollViewRef.current.scrollTo({ x: SCREEN_WIDTH * moodIndex, animated: false });
+  //     }
+  //   }
+  // }, [mood]);
 
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
@@ -162,6 +174,7 @@ const handleSearch = (text: string) => {
   if (text) {
     const position = findMoodPosition(text);
     if (position) {
+      // Calculate the position to center the found mood
       const quadrantOrder = {
         'high-unpleasant': { x: 0, y: 0 },
         'high-pleasant': { x: -SECTION_WIDTH, y: 0 },
@@ -170,12 +183,13 @@ const handleSearch = (text: string) => {
       };
       
       const targetPosition = quadrantOrder[position.quadrant as keyof typeof quadrantOrder];
-      pan.stopAnimation();
+      
+      // Animate to the position
       RNAnimated.spring(pan, {
         toValue: targetPosition,
         useNativeDriver: true,
-        tension: 40,
-        friction: 7
+        tension: 50,
+        friction: 10
       }).start();
     }
   }
@@ -262,6 +276,10 @@ const renderSearchResults = () => {
   );
 };
   
+// const handleSearch = (text: string) => {
+//   setSearchQuery(text);
+// };
+  
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       // Handle scroll animations
@@ -278,23 +296,52 @@ const renderSearchResults = () => {
     <View key={key} style={styles.colorSection}>
       {moodOptions[moodKey].map((option, index) =>
                 renderMoodButton(option, index, key)
+
+      // (
+      //   <TouchableOpacity
+      //     key={`${key}-${index}`}
+      //     style={[
+      //       styles.moodButton,
+      //       {
+      //         backgroundColor: option.color,
+      //         opacity: option.intensity / 100,
+      //       },
+      //     ]}
+      //     onPress={() => handleMoodSelect(option.text)}
+      //   >
+      //     <ThemedText style={styles.moodButtonText}>
+      //       {option.text}
+      //     </ThemedText>
+      //   </TouchableOpacity>
+      //   )
       )}
     </View>
   );
 
   useEffect(() => {
     if (mood) {
-      const colorOrder = {
-        "high-unpleasant": { x: 0, y: 0 },                    // Red (top-left)
-        "high-pleasant": { x: -SECTION_WIDTH, y: 0 },         // Yellow (top-right)
-        "low-unpleasant": { x: 0, y: -SECTION_HEIGHT },       // Blue (bottom-left)
-        "low-pleasant": { x: -SECTION_WIDTH, y: -SECTION_HEIGHT }  // Green (bottom-right)
-      };
-
-      const position = colorOrder[mood as keyof typeof colorOrder];
-      if (position) {
-        pan.stopAnimation();
-        pan.setValue(position);
+      const colorOrder = [
+        "high-unpleasant",
+        "high-pleasant",
+        "low-unpleasant",
+        "low-pleasant",
+      ];
+      const selectedIndex = colorOrder.indexOf(mood);
+      if (selectedIndex !== -1) {
+        let x = 0;
+        let y = 0;
+  
+        // For horizontal positioning
+        if (selectedIndex % 2 === 1) { // yellow or green
+          x = -SECTION_WIDTH ; // Move one section left to show yellow/green first
+        }
+  
+        // For vertical positioning
+        if (selectedIndex >= 2) { // blue or green
+          y = -SECTION_HEIGHT ; // Move one section up to show blue/green first
+        }
+  
+        pan.setValue({ x, y });
       }
     }
   }, [mood]);
@@ -302,52 +349,27 @@ const renderSearchResults = () => {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.extractOffset();
+      onPanResponderMove:(_, gestureState) => {
+        // Calculate wrapped positions for infinite scroll effect
+        const x = gestureState.dx;
+        const y = gestureState.dy;
+        
+        // Wrap x between -SECTION_WIDTH and SECTION_WIDTH
+        const wrappedX = ((x % (SECTION_WIDTH * 2)) + (SECTION_WIDTH * 2)) % (SECTION_WIDTH * 2) - SECTION_WIDTH;
+        
+        // Wrap y between -SECTION_HEIGHT and SECTION_HEIGHT
+        const wrappedY = ((y % (SECTION_HEIGHT * 2)) + (SECTION_HEIGHT * 2)) % (SECTION_HEIGHT * 2) - SECTION_HEIGHT;
+        
+        pan.setValue({ x: wrappedX, y: wrappedY });
       },
-      onPanResponderMove: (_, gestureState) => {
-        // Calculate the wrapped position for infinite scrolling
-        const rawX = gestureState.dx;
-        const rawY = gestureState.dy;
-        
-        // Wrap around logic for infinite scrolling
-        const wrappedX = ((rawX % SECTION_WIDTH) + SECTION_WIDTH) % SECTION_WIDTH;
-        const wrappedY = ((rawY % SECTION_HEIGHT) + SECTION_HEIGHT) % SECTION_HEIGHT;
-        
-        // Apply the wrapped position
-        pan.setValue({
-          x: wrappedX - SECTION_WIDTH / 2,
-          y: wrappedY - SECTION_HEIGHT / 2
-        });
+      onPanResponderRelease: () => {
+        // Optional: Animate to the nearest section if desired
       },
-      onPanResponderRelease: (_, gestureState) => {
-        pan.flattenOffset();
-        
-        if (Math.abs(gestureState.vx) > 0.5 || Math.abs(gestureState.vy) > 0.5) {
-          RNAnimated.decay(pan, {
-            velocity: { x: gestureState.vx, y: gestureState.vy },
-            deceleration: 0.997,
-            useNativeDriver: true,
-          }).start(() => {
-            // Get current values safely
-            const currentX = Number(JSON.stringify(pan.x));
-            const currentY = Number(JSON.stringify(pan.y));
-            
-            const wrappedX = ((currentX % SECTION_WIDTH) + SECTION_WIDTH) % SECTION_WIDTH;
-            const wrappedY = ((currentY % SECTION_HEIGHT) + SECTION_HEIGHT) % SECTION_HEIGHT;
-            
-            pan.setValue({
-              x: wrappedX - SECTION_WIDTH / 2,
-              y: wrappedY - SECTION_HEIGHT / 2
-            });
-          });
-        }
-      }
     })
   ).current;
 
-
+  // Update the navigation to use the correct path
+  // const handleMoodSelect = (selectedMood: string) => {
     const handleMoodSelect = async (selectedMood: string) => {
 
       try {
@@ -372,111 +394,185 @@ const renderSearchResults = () => {
           headerShown: false,
         }}
       />
-      
 
-      <View style={styles.headerContainer}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.iconButton} 
-            onPress={(e) => {
-              e.stopPropagation();
-              handleBackPress();
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#2F3336" />
-          </TouchableOpacity>
-          
-          <View style={styles.searchContainer}>
-            <RNAnimated.View 
-              style={[
-                styles.searchInputContainer,
-                {
-                  width: searchInputAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, SCREEN_WIDTH - 120]
-                  }),
-                  opacity: searchInputAnimation
-                }
-              ]}
-            >
-              {isSearchVisible && (
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search mood..."
-                  value={searchQuery}
-                  onChangeText={handleSearch}
-                  autoFocus
-                  selectionColor="#2F3336"
-                  cursorColor="#2F3336"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  // Stop the touch event from reaching the parent
-                  onPressIn={(e) => e.stopPropagation()}
-                />
-              )}
-            </RNAnimated.View>
-            
+      <TouchableOpacity 
+        activeOpacity={1} 
+        style={StyleSheet.absoluteFill} 
+        onPress={dismissSearch}
+      >
+        {/* Add header here, before the mood grid */}
+        <View style={styles.headerContainer}>
+          <View style={styles.header}>
             <TouchableOpacity 
               style={styles.iconButton} 
               onPress={(e) => {
                 e.stopPropagation();
-                toggleSearch();
+                handleBackPress();
               }}
             >
-              <Ionicons 
-                name={isSearchVisible ? "close" : "search"} 
-                size={24} 
-                color="#2F3336" 
-              />
+              <Ionicons name="arrow-back" size={24} color="#2F3336" />
             </TouchableOpacity>
+            
+            <View style={styles.searchContainer}>
+              <RNAnimated.View 
+                style={[
+                  styles.searchInputContainer,
+                  {
+                    width: searchInputAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, SCREEN_WIDTH - 120]
+                    }),
+                    opacity: searchInputAnimation
+                  }
+                ]}
+              >
+                {isSearchVisible && (
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search mood..."
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                    autoFocus
+                    selectionColor="#2F3336"
+                    cursorColor="#2F3336"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    // Stop the touch event from reaching the parent
+                    onPressIn={(e) => e.stopPropagation()}
+                  />
+                )}
+              </RNAnimated.View>
+              
+              <TouchableOpacity 
+                style={styles.iconButton} 
+                onPress={(e) => {
+                  e.stopPropagation();
+                  toggleSearch();
+                }}
+              >
+                <Ionicons 
+                  name={isSearchVisible ? "close" : "search"} 
+                  size={24} 
+                  color="#2F3336" 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
 
-      <TouchableOpacity 
-        activeOpacity={1} 
-        style={StyleSheet.absoluteFill}
-        onPress={dismissSearch}
-      >
+        {/* {isSearchVisible && searchQuery ? (
+          renderSearchResults()
+        ) : ( */}
         <RNAnimated.View
           style={[
             styles.panContainer,
-            {
-              transform: [
-                {
-                  translateX: pan.x.interpolate({
-                    inputRange: [-SECTION_WIDTH * 2, SECTION_WIDTH * 2],
-                    outputRange: [-SECTION_WIDTH * 2, SECTION_WIDTH * 2],
-                  })
-                },
-                {
-                  translateY: pan.y.interpolate({
-                    inputRange: [-SECTION_HEIGHT * 2, SECTION_HEIGHT * 2],
-                    outputRange: [-SECTION_HEIGHT * 2, SECTION_HEIGHT * 2],
-                  })
-                }
-              ]
-            }
+            { transform: pan.getTranslateTransform() },
+            { borderWidth: 0, borderColor: "transparent" },
           ]}
           {...panResponder.panHandlers}
         >
           <View style={styles.moodGrid}>
-            <View style={styles.gridRow}>
-              <View style={styles.gridItem}>
-                {renderMoodSection("high-unpleasant", "hu-1")}
-              </View>
-              <View style={styles.gridItem}>
-                {renderMoodSection("high-pleasant", "hp-1")}
-              </View>
+
+            {/* <View style={styles.colorSection}>
+              {moodOptions["high-unpleasant"].map((option, index) => (
+                <TouchableOpacity
+                  key={`high-unpleasant-${index}`}
+                  style={[
+                    styles.moodButton,
+                    {
+                      backgroundColor: option.color,
+                      opacity: option.intensity / 100,
+                    },
+                  ]}
+                  onPress={() => handleMoodSelect(option.text)}
+                >
+                  <ThemedText style={styles.moodButtonText}>
+                    {option.text}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
             </View>
-            <View style={styles.gridRow}>
-              <View style={styles.gridItem}>
-                {renderMoodSection("low-unpleasant", "lu-1")}
-              </View>
-              <View style={styles.gridItem}>
-                {renderMoodSection("low-pleasant", "lp-1")}
-              </View>
+            <View style={styles.colorSection}>
+              {moodOptions["high-pleasant"].map((option, index) => (
+                <TouchableOpacity
+                  key={`high-pleasant-${index}`}
+                  style={[
+                    styles.moodButton,
+                    {
+                      backgroundColor: option.color,
+                      opacity: option.intensity / 100,
+                    },
+                  ]}
+                  onPress={() => handleMoodSelect(option.text)}
+                >
+                  <ThemedText style={styles.moodButtonText}>
+                    {option.text}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
             </View>
+            <View style={styles.colorSection}>
+              {moodOptions["low-unpleasant"].map((option, index) => (
+                <TouchableOpacity
+                  key={`low-unpleasant-${index}`}
+                  style={[
+                    styles.moodButton,
+                    {
+                      backgroundColor: option.color,
+                      opacity: option.intensity / 100,
+                    },
+                  ]}
+                  onPress={() => handleMoodSelect(option.text)}
+                >
+                  <ThemedText style={styles.moodButtonText}>
+                    {option.text}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.colorSection}>
+              {moodOptions["low-pleasant"].map((option, index) => (
+                <TouchableOpacity
+                  key={`low-pleasant-${index}`}
+                  style={[
+                    styles.moodButton,
+                    {
+                      backgroundColor: option.color,
+                      opacity: option.intensity / 100,
+                    },
+                  ]}
+                  onPress={() => handleMoodSelect(option.text)}
+                >
+                  <ThemedText style={styles.moodButtonText}>
+                    {option.text}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </View> */}
+
+            {renderMoodSection("high-unpleasant", "hu-1")}
+            {renderMoodSection("high-pleasant", "hp-1")}
+            {renderMoodSection("high-unpleasant", "hu-2")}
+            {renderMoodSection("high-pleasant", "hp-2")}
+
+            {/* Second row: Blue-Green-Blue-Green */}
+            {renderMoodSection("low-unpleasant", "lu-1")}
+            {renderMoodSection("low-pleasant", "lp-1")}
+            {renderMoodSection("low-unpleasant", "lu-2")}
+            {renderMoodSection("low-pleasant", "lp-2")}
+            
+            {/* Repeat for vertical scrolling */}
+            {renderMoodSection("high-unpleasant", "hu-3")}
+            {renderMoodSection("high-pleasant", "hp-3")}
+            {renderMoodSection("high-unpleasant", "hu-4")}
+            {renderMoodSection("high-pleasant", "hp-4")}
+
+
+            {renderMoodSection("low-unpleasant", "lu-3")}
+            {renderMoodSection("low-pleasant", "lp-3")}
+            {renderMoodSection("low-unpleasant", "lu-4")}
+            {renderMoodSection("low-pleasant", "lp-4")}
+          
           </View>
         </RNAnimated.View>
       </TouchableOpacity>
@@ -488,23 +584,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+    borderWidth: 0,
   },
   panContainer: {
     ...StyleSheet.absoluteFillObject,
-    paddingTop: Platform.OS === 'ios' ? 120 : 70,
+    borderWidth: 0,
+    borderColor: "transparent",
   },
   moodGrid: {
-    flexDirection: "column",
-    width: SECTION_WIDTH * 2,
-    height: SECTION_HEIGHT * 2,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    width: (SCREEN_WIDTH - 30) * 4,
+    height: ((SCREEN_WIDTH - 45) / 3 * 5 + 25) * 4,
+    borderWidth: 0,
+    borderColor: "transparent",
   },
   colorSection: {
-    width: SECTION_WIDTH,
-    height: SECTION_HEIGHT,
+    width: SCREEN_WIDTH - 30,
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 5,
-    padding: 2,
+    padding:2,
+    borderWidth: 0,
+    borderColor: "transparent",
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
   },
   moodButton: {
     width: (SCREEN_WIDTH - 45) / 3,
@@ -526,18 +632,9 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 999,
-    backgroundColor: 'white',
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+    paddingTop: 20,
   },
   header: {
     flexDirection: 'row',
@@ -601,27 +698,80 @@ const styles = StyleSheet.create({
     color: '#2F3336',
   },
   highlightedMoodButton: {
-    transform: [{scale: 1.05}],
-    zIndex: 2,
-    elevation: 5,
+    transform: [{scale: 1.1}],
+    zIndex: 1,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.5,
-    borderWidth: 2,
-    borderColor: '#2F3336'
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   
   highlightedMoodText: {
     fontFamily: 'LexendDeca-Bold',
   },
-  gridRow: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  gridItem: {
-    flex: 1,
-  },
 });
 
 export default Mood;
+
+
+
+/// search container
+      <View style={styles.headerContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.iconButton} 
+            onPress={(e) => {
+              e.stopPropagation();
+              handleBackPress();
+            }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#2F3336" />
+          </TouchableOpacity>
+          
+          <View style={styles.searchContainer}>
+            <RNAnimated.View 
+              style={[
+                styles.searchInputContainer,
+                {
+                  width: searchInputAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, SCREEN_WIDTH - 120]
+                  }),
+                  opacity: searchInputAnimation
+                }
+              ]}
+            >
+              {isSearchVisible && (
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search mood..."
+                  value={searchQuery}
+                  onChangeText={handleSearch}
+                  autoFocus
+                  selectionColor="#2F3336"
+                  cursorColor="#2F3336"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  // Stop the touch event from reaching the parent
+                  onPressIn={(e) => e.stopPropagation()}
+                />
+              )}
+            </RNAnimated.View>
+            
+            <TouchableOpacity 
+              style={styles.iconButton} 
+              onPress={(e) => {
+                e.stopPropagation();
+                toggleSearch();
+              }}
+            >
+              <Ionicons 
+                name={isSearchVisible ? "close" : "search"} 
+                size={24} 
+                color="#2F3336" 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>

@@ -9,7 +9,7 @@ const RiveNative = Platform.select({
 })?.();
 
 const riveAnimations: Record<string, any> = {
-  z38_slider_27: require("@/public/assets/animations/z38_slider_27.riv"),
+  z38_slider_27: require("@/public/assets/animations/z38_slider.riv"),
 };
 
 const TEXT_RUN_IDS = [

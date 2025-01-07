@@ -226,15 +226,12 @@ const VisualMindfulness: React.FC = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          // style={[styles.iconButton, !selectedOption && styles.disabledButton]}
           style={styles.iconButton}
           onPress={handleNextPress}
-          // disabled={!selectedOption}
         >
           <Ionicons
             name="arrow-forward"
             size={24}
-            // color={selectedOption ? "#2F3336" : "#CCCCCC"}
             color="#2F3336"
           />
         </TouchableOpacity>

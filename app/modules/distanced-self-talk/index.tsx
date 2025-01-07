@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path, Rect } from "react-native-svg";
-import SwipeableScreens from "./components/SwipeableScreens.native";
+// import SwipeableScreens from "./components/SwipeableScreens.native";
 
 const DistancedSelfTalkScreen: React.FC = () => {
   const handleAudioPress = () => {
@@ -34,11 +34,11 @@ const DistancedSelfTalkScreen: React.FC = () => {
         }}
       />
 
-      <SwipeableScreens
+      {/* <SwipeableScreens
         style={styles.swipeContainer}
         onSwipeLeft={handleSwipeLeft}
         onSwipeRight={handleSwipeRight}
-      >
+      > */}
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -81,7 +81,7 @@ const DistancedSelfTalkScreen: React.FC = () => {
             </ThemedText>
           </View>
         </ScrollView>
-      </SwipeableScreens>
+      {/* </SwipeableScreens> */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.iconButton} onPress={handleAudioPress}>
           <Ionicons name="volume-medium" size={24} color="#2F3336" />
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    width: "33%", // make dynamic based on pages
+    width: "33%",
     backgroundColor: "#D6D0FD",
     borderRadius: 2,
   },

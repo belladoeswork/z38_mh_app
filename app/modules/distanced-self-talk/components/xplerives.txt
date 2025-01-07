@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, Platform, ViewStyle } from "react-native";
-import { useRive } from "@rive-app/react-canvas";
+import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 
 type RiveAnimationResources = {
   z38_slider1: any;
@@ -28,8 +28,12 @@ interface RiveAnimationProps {
   height?: number;
   style?: ViewStyle;
   onPlay?: () => void;
-  textValue?: string;
-  onTextChange?: (text: string) => void;
+  textValues: {
+    input1: string;
+    input2: string;
+    input3: string;
+    input4: string;
+  };
   onButtonPress?: () => void;
 
 }
@@ -55,50 +59,48 @@ const RiveAnimation: React.FC<RiveAnimationProps> = ({
   width,
   height,
   style,
-  textValue,
-  onTextChange,
+  textValues,
   onButtonPress,
 }) => {
   const { rive, RiveComponent } = useRive({
     src: riveAnimations[resourceName],
     artboard: PARENT_ARTBOARD,
-    stateMachines: [stateMachineName],
+    stateMachines: ["State Machine 1"],
     autoplay: true,
   });
 
-  // Replace the state machine listener with useStateMachineInput
+  // Use state input to detect button clicks
+  const stateInput = useStateMachineInput(rive, "State Machine 1", "State");
+  
+  React.useEffect(() => {
+    if (!stateInput?.value) return;
+    console.log('State changed:', stateInput.value);
+    onButtonPress?.();
+  }, [stateInput?.value, onButtonPress]);
+
+  // Update text runs when textValues change
   React.useEffect(() => {
     if (!rive) return;
 
-    const input = rive.stateMachineInputs(stateMachineName)?.find(
-      input => input.name === 'ButtonClicked'
-    );
-
-    if (input) {
-      input.value = true;
-      onButtonPress?.();
-    }
-  }, [rive, stateMachineName, onButtonPress]);
-
-  // Handle animation lifecycle
-  React.useEffect(() => {
-    if (!rive || !textValue) return;
-
     try {
-      TEXT_RUN_IDS.forEach(runId => {
+      // Map text runs to input values
+      TEXT_RUN_IDS.forEach((runId, index) => {
+        const inputKey = `input${index + 1}` as keyof typeof textValues;
+        const value = textValues[inputKey];
+        
         try {
-          // Use setTextRunValueAtPath for nested text runs
-          rive.setTextRunValueAtPath(runId, textValue, NESTED_ARTBOARD);
-          console.log(`Setting text run ${runId} at path ${NESTED_ARTBOARD} to ${textValue}`);
+          rive.setTextRunValueAtPath(runId, value, NESTED_ARTBOARD);
+          console.log(`Setting text run ${runId} at path ${NESTED_ARTBOARD} to ${value}`);
         } catch (error) {
           console.error(`Error setting text for ${runId}:`, error);
         }
       });
+      
       rive.play();
     } catch (error) {
       console.error("Error in Rive animation:", error);
     }
-  }, [rive, textValue]);
+  }, [rive, textValues]);
 
   return (
     <View style={[styles.container, style]}>

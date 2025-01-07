@@ -1,11 +1,11 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View, ScrollView } from "react-native";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path, Rect } from "react-native-svg";
-import SwipeableScreens from "./components/SwipeableScreens.native";
+// import SwipeableScreens from "./components/SwipeableScreens.native";
 
 const TwoWayScreen: React.FC = () => {
   const handleAudioPress = () => {
@@ -26,11 +26,16 @@ const TwoWayScreen: React.FC = () => {
 
   return (
     <ThemedView style={styles.container}>
-      <SwipeableScreens
+      <Stack.Screen
+        options={{
+          headerShown: false,
+        }}
+      />
+      {/* <SwipeableScreens
         style={styles.swipeContainer}
         onSwipeLeft={handleSwipeLeft}
         onSwipeRight={handleSwipeRight}
-      >
+      > */}
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -93,7 +98,7 @@ const TwoWayScreen: React.FC = () => {
             <Ionicons name="arrow-forward" size={24} color="#2F3336" />
           </TouchableOpacity>
         </View>
-      </SwipeableScreens>
+      {/* </SwipeableScreens> */}
     </ThemedView>
   );
 };
@@ -110,9 +115,10 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
+    paddingBottom: 0,
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
+    alignItems: "center",
+    gap: 50,
   },
   iconContainer: {
     width: 60,
@@ -128,9 +134,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontFamily: "LexendDeca-Bold",
-    letterSpacing: -0.42,
+    letterSpacing: -0.15,
     color: "#2F3336",
     flex: 1,
+    lineHeight: 38,
   },
   progressBarContainer: {
     paddingHorizontal: 24,
@@ -143,9 +150,14 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    width: "66%", // make dynamic based on pages
+    width: "66%",
     backgroundColor: "#D6D0FD",
     borderRadius: 2,
+  },
+  content: {
+    padding: 20,
+    gap: 20,
+    paddingBottom: 40,
   },
   boldText: {
     fontFamily: "LexendDeca-Bold",
@@ -154,11 +166,7 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     letterSpacing: -0.27,
   },
-  content: {
-    padding: 20,
-    gap: 20,
-    paddingBottom: 40,
-  },
+
   heading: {
     fontSize: 28,
     fontFamily: "LexendDeca-Bold",

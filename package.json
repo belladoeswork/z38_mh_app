@@ -13,7 +13,8 @@
     "lint": "expo lint",
     "postinstall": "mkdir -p public/assets && ln -sf ../../assets/animations public/assets/animations",
     "prestart": "mkdir -p public/assets/animations && cp -r assets/animations/* public/assets/animations/",
-    "vercel-build": "expo export -p web"
+    "vercel-build": "expo export -p web",
+    "build": "expo export -p web"
   },
   "jest": {
     "preset": "jest-expo"

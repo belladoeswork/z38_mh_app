@@ -1,0 +1,8 @@
+{
+  "buildCommand": "expo export -p web",
+  "outputDirectory": "dist",
+  "framework": "react",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+} 

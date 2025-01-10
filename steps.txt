@@ -1,0 +1,12 @@
+npx eas login
+
+npx eas build:configure
+
+# For Distanced Self-Talk module
+npx eas build --profile dst-preview --platform android
+
+# For Mood module
+npx eas build --profile mood-preview --platform android
+
+# For Mindfulness module
+npx eas build --profile mindfulness-preview --platform android

@@ -15,13 +15,23 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.belladoeswork.z38_mh_app"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png",
-      "publicPath": "/"
+      "publicPath": "/",
+      "backgroundColor": "#ffffff",
+      "build": {
+        "babel": {
+          "include": [
+            "@rive-app/react-canvas",
+            "react-native-reanimated"
+          ]
+        }
+      }
     },
     "plugins": [
       "expo-router",
@@ -38,8 +48,8 @@
     ],
     "experiments": {
       "typedRoutes": true
-    },  
-      "assets": [
+    },
+    "assets": [
       "./public/assets/animations/*.riv"
     ],
     "assetBundlePatterns": [
@@ -47,6 +57,23 @@
       "assets/images/*",
       "assets/**/*",
       "public/assets/**/*"
-    ]
+    ],
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "channels": [
+      "dst-preview",
+      "mood-preview",
+      "mindfulness-preview"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4836ab8c-e463-47a3-95a7-a8c8c29ef205"
+      }
+    }
   }
 }

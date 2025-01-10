@@ -1,0 +1,42 @@
+{
+  "cli": {
+    "version": ">= 5.9.1"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {},
+    "dst-preview": {
+      "extends": "preview",
+      "env": {
+        "EXPO_PUBLIC_ENABLE_DST": "true",
+        "EXPO_PUBLIC_ENABLE_MOOD": "false",
+        "EXPO_PUBLIC_ENABLE_MINDFULNESS": "false"
+      }
+    },
+    "mood-preview": {
+      "extends": "preview",
+      "env": {
+        "EXPO_PUBLIC_ENABLE_DST": "false",
+        "EXPO_PUBLIC_ENABLE_MOOD": "true",
+        "EXPO_PUBLIC_ENABLE_MINDFULNESS": "false"
+      }
+    },
+    "mindfulness-preview": {
+      "extends": "preview",
+      "env": {
+        "EXPO_PUBLIC_ENABLE_DST": "false",
+        "EXPO_PUBLIC_ENABLE_MOOD": "false",
+        "EXPO_PUBLIC_ENABLE_MINDFULNESS": "true"
+      }
+    }
+  }
+} 
